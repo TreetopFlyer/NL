@@ -1,14 +1,12 @@
 
 class Connection
 {
-    From:Neuron;
-    To:Neuron;
+    Neuron:Neuron
     Weight:number;
 
-    constructor(inFrom:Neuron, inTo:Neuron, inW:number)
+    constructor(inNeuron:Neuron, inW:number)
     {
-        this.From = inFrom;
-        this.To = inTo;
+        this.Neuron = inNeuron;
         this.Weight = inW;
     }
 }
@@ -27,11 +25,11 @@ class Neuron
     }
     ListenReceptive(inN:Neuron, inW:number)
     {
-        inN.Receptive.push(new Connection(this, inW));
+        this.Receptive.push(new Connection(inN, inW));
     }
     ListenLateral(inN:Neuron, inW:number)
     {
-        inN.Lateral.push(new Connection(this, inW));
+        this.Lateral.push(new Connection(inN, inW));
     }
 }
 
@@ -122,8 +120,8 @@ class Layer
         {
             this.IterateRadial(inCX, inCY, inRadius, (inNeighbor:Neuron, inNX:number, inNY:number, inDistance:number)=>
             {
-                // wire outgoing signals from Current to each Neighbor
-                inNeighbor.ListenLateral(inCurrent, inDistance/inRadius > 0.5 ? 1 : -1);
+                // connect each Neighbor to Current
+                inCurrent.ListenLateral(inNeighbor, inDistance/inRadius > 0.5 ? 1 : -1);
             });
         });
     }
@@ -138,7 +136,7 @@ class Layer
 
             inInputLayer.IterateRadial(this.Width*percX, this.Height*percY, inRadius, (inVisible:Neuron, inVX:number, inVY:number, inDistance:number)=>
             {
-                // wire outgoing signals from each Visible to the Current
+                // connect each Visible to Current
                 inCurrent.ListenReceptive(inVisible, inDistance/inRadius > 0.5 ? 1 : -1);
             });
         });
