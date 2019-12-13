@@ -1,12 +1,14 @@
 
 class Connection
 {
-    Neuron:Neuron;
+    From:Neuron;
+    To:Neuron;
     Weight:number;
 
-    constructor(inN:Neuron, inW:number)
+    constructor(inFrom:Neuron, inTo:Neuron, inW:number)
     {
-        this.Neuron = inN;
+        this.From = inFrom;
+        this.To = inTo;
         this.Weight = inW;
     }
 }
@@ -61,6 +63,7 @@ class Layer
     IterateAll(inProcessor:Function)
     {
         var x:number, y:number;
+
         for(x=0; x<this.Width; x++)
         {
             for(y=0; y<this.Height; y++)
@@ -75,6 +78,9 @@ class Layer
         var minX:number, minY:number, maxX:number, maxY:number;
         var offX:number, offY:number;
         var distance:number;
+
+        inX = Math.floor(inX);
+        inY = Math.floor(inY);
 
         minX = inX - inRadius;
         minY = inY - inRadius;
@@ -104,7 +110,7 @@ class Layer
                     distance = Math.sqrt(offX*offX + offY*offY);
                     if(distance <= inRadius)
                     {
-                        inProcessor(this.Members[x][y]);
+                        inProcessor(this.Members[x][y], x, y, distance);
                     }
                 }
             }
@@ -112,11 +118,30 @@ class Layer
     }
     WireLateral(inRadius:number, inPercentage:number)
     {
-
+        this.IterateAll((inCurrent:Neuron, inCX:number, inCY:number)=>
+        {
+            this.IterateRadial(inCX, inCY, inRadius, (inNeighbor:Neuron, inNX:number, inNY:number, inDistance:number)=>
+            {
+                // wire outgoing signals from Current to each Neighbor
+                inNeighbor.ListenLateral(inCurrent, inDistance/inRadius > 0.5 ? 1 : -1);
+            });
+        });
     }
-    WireReceptive(inRadius:number, inPercentage:number, inLayer:Layer)
+    WireReceptive(inRadius:number, inPercentage:number, inInputLayer:Layer)
     {
+        var percX:number, percY:number;
 
+        this.IterateAll((inCurrent:Neuron, inCX:number, inCY:number)=>
+        {
+            percX = inCX/this.Width;
+            percY = inCY/this.Height;
+
+            inInputLayer.IterateRadial(this.Width*percX, this.Height*percY, inRadius, (inVisible:Neuron, inVX:number, inVY:number, inDistance:number)=>
+            {
+                // wire outgoing signals from each Visible to the Current
+                inCurrent.ListenReceptive(inVisible, inDistance/inRadius > 0.5 ? 1 : -1);
+            });
+        });
     }
 }
 
