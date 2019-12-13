@@ -17,19 +17,45 @@ class Neuron
     Y:number;
     Receptive:Array<Connection>;
     Lateral:Array<Connection>;
+    Output:number;
 
     constructor()
     {
         this.Receptive = [];
         this.Lateral = [];
+        this.Output = 0;
+    }
+    Listen(inArray:Array<Connection>, inNeuron:Neuron, inWeight:number)
+    {
+        inArray.push(new Connection(inNeuron, inWeight));
     }
     ListenReceptive(inN:Neuron, inW:number)
     {
-        this.Receptive.push(new Connection(inN, inW));
+        this.Listen(this.Receptive, inN, inW);
     }
     ListenLateral(inN:Neuron, inW:number)
     {
-        this.Lateral.push(new Connection(inN, inW));
+        this.Listen(this.Lateral, inN, inW);
+    }
+    Sample(inArray:Array<Connection>)
+    {
+        var connection:any;
+        var total:number;
+
+        total = 0;
+        for(connection in inArray)
+        {
+            total += connection.Neuron.Output * connection.Neuron.Weight;
+        }
+        return total;
+    }   
+    SampleLateral()
+    {
+        return this.Sample(this.Lateral);
+    }
+    SampleReceptive()
+    {
+        return this.Sample(this.Receptive);
     }
 }
 
@@ -143,3 +169,4 @@ class Layer
     }
 }
 
+export {Connection, Neuron, Layer}
