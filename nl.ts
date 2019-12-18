@@ -1,4 +1,9 @@
-
+const Util = {
+    Sigmoid(inValue:number, inBias:number = Math.E)
+    {
+        return 1 / (1 + Math.pow(inBias, -inValue));
+    }
+};
 class Connection
 {
     Neuron:Neuron
@@ -39,13 +44,12 @@ class Neuron
     }
     Sample(inArray:Array<Connection>)
     {
-        var connection:any;
-        var total:number;
+        let connection:any, total:number;
 
         total = 0;
-        for(connection in inArray)
+        for(connection of inArray)
         {
-            total += connection.Neuron.Output * connection.Neuron.Weight;
+            total += connection.Neuron.Output * connection.Weight;
         }
         return total;
     }   
@@ -169,4 +173,4 @@ class Layer
     }
 }
 
-export {Connection, Neuron, Layer}
+export {Connection, Neuron, Layer, Util}
