@@ -4,6 +4,7 @@ const Util = {
         return 1 / (1 + Math.pow(inBias, -inValue));
     }
 };
+
 class Connection
 {
     Neuron:Neuron
@@ -18,17 +19,17 @@ class Connection
 
 class Neuron
 {
-    X:number;
-    Y:number;
     Receptive:Array<Connection>;
     Lateral:Array<Connection>;
     Output:number;
+    Meta:any;
 
     constructor()
     {
         this.Receptive = [];
         this.Lateral = [];
         this.Output = 0;
+        this.Meta = {};
     }
     Listen(inArray:Array<Connection>, inNeuron:Neuron, inWeight:number)
     {
@@ -68,6 +69,7 @@ class Layer
     Members:Array<Array<Neuron>>;
     Width:number;
     Height:number;
+    Meta:any;
 
     constructor(inWidth:number, inHeight:number)
     {
@@ -87,6 +89,7 @@ class Layer
 
         this.Width = inWidth;
         this.Height = inHeight;
+        this.Meta = {};
     }
     IterateAll(inProcessor:Function)
     {
@@ -151,7 +154,7 @@ class Layer
             this.IterateRadial(inCX, inCY, inRadius, (inNeighbor:Neuron, inNX:number, inNY:number, inDistance:number)=>
             {
                 // connect each Neighbor to Current
-                inCurrent.ListenLateral(inNeighbor, inDistance/inRadius > 0.5 ? 1 : -1);
+                inCurrent.ListenLateral(inNeighbor, inDistance/inRadius > 0.5 ? -1 : 1);
             });
         });
     }
@@ -173,4 +176,39 @@ class Layer
     }
 }
 
-export {Connection, Neuron, Layer, Util}
+class Network
+{
+    Layers:Array<Layer>;
+    Meta:any;
+
+    constructor()
+    {
+        this.Layers = [];
+        this.Meta = {};
+    }
+    Layer(
+        inWidth:number,
+        inHeight:number,
+        inLateralRadius:number,
+        inLateralPercent:number,
+        inReceptiveRadius?:number,
+        inReceptivePercent?:number
+    )
+    {
+        let layer = new Layer(inWidth, inHeight);
+        layer.WireLateral(inLateralRadius, inLateralPercent);
+
+        if(this.Layers.length != 0)
+        {
+            layer.WireReceptive(inReceptiveRadius, inReceptivePercent, this.Layers[this.Layers.length-1]);
+        }
+
+        this.Layers.push(layer);
+    }
+    IterateAll(inProcessor:Function)
+    {
+        this.Layers.forEach((inLayer, inIndex) => inProcessor(inLayer, inIndex));
+    }
+}
+
+export {Connection, Neuron, Layer, Network, Util}
