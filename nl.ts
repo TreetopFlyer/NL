@@ -115,8 +115,8 @@ class Layer
 
         minX = inX - inRadius;
         minY = inY - inRadius;
-        maxX = inX + inRadius;
-        maxY = inY + inRadius;
+        maxX = inX + inRadius + 1;
+        maxY = inY + inRadius + 1;
 
         for(x=minX; x<maxX; x++)
         {
@@ -164,14 +164,25 @@ class Layer
 
         this.IterateAll((inCurrent:Neuron, inCX:number, inCY:number)=>
         {
-            percX = inCX/this.Width;
-            percY = inCY/this.Height;
+            percX = inCX/(this.Width-1);
+            percY = inCY/(this.Height-1);
 
-            inInputLayer.IterateRadial(this.Width*percX, this.Height*percY, inRadius, (inVisible:Neuron, inVX:number, inVY:number, inDistance:number)=>
+            inInputLayer.IterateRadial(inInputLayer.Width*percX, inInputLayer.Height*percY, inRadius, (inVisible:Neuron, inVX:number, inVY:number, inDistance:number)=>
             {
                 // connect each Visible to Current
-                inCurrent.ListenReceptive(inVisible, inDistance/inRadius > 0.5 ? 1 : -1);
+                inCurrent.ListenReceptive(inVisible, inDistance/inRadius > 0.5 ? -1 : 1);
             });
+        });
+    }
+    Update()
+    {
+        this.IterateAll((inCurrent:Neuron, inCX:number, inCY:number)=>
+        {
+            inCurrent.Output = inCurrent.SampleReceptive();
+        });
+        this.IterateAll((inCurrent:Neuron, inCX:number, inCY:number)=>
+        {
+            inCurrent.Output = Util.Sigmoid(inCurrent.Output + inCurrent.SampleLateral());
         });
     }
 }
@@ -207,7 +218,17 @@ class Network
     }
     IterateAll(inProcessor:Function)
     {
-        this.Layers.forEach((inLayer, inIndex) => inProcessor(inLayer, inIndex));
+        this.Layers.forEach((inLayer:Layer, inIndex:number) => inProcessor(inLayer, inIndex));
+    }
+    Update()
+    {
+        this.IterateAll((inLayer:Layer, inIndex:number) =>
+        {
+            if(inIndex != 0)
+            {
+                inLayer.Update();
+            }
+        });
     }
 }
 

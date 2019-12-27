@@ -13,7 +13,8 @@ const layout = {
 
 const network = new Network();
 network.Layer(10, 5, 4, 0.5);
-network.Layer(2, 10, 4, 0.5, 4, 0.5);
+network.Layer(3, 10, 4, 0.5, 4, 0.5);
+network.Layer(5, 5, 3, 0.5, 4, 0.5);
 
 layout.start = 0;
 network.IterateAll((inLayer:Layer, inIndex:number) =>
@@ -30,7 +31,6 @@ network.IterateAll((inLayer:Layer, inIndex:number) =>
 
 App(
     {
-        Layers:[new Layer(10, 5), new Layer(2, 10)],
         Network:network,
         Selected:[]
     },
@@ -77,11 +77,13 @@ App(
             ></circle>
             `;
         },
+
         ConnectionsLateral(inNeuron:Neuron, send:Function, draw:Function)
         {
-            return inNeuron.Lateral.map((inLat:Connection)=>
+            let output = [];
+            let drawConnection = (inConnection:Connection) =>
             {
-                let sig = (Util.Sigmoid(inLat.Weight) * 2) - 1;
+                let sig = (Util.Sigmoid(inConnection.Weight) * 2) - 1;
                 let red = 0;
                 let blue = 0;
                 if(sig >= 0)
@@ -92,10 +94,19 @@ App(
                 {
                     blue = 255 * -sig;
                 }
-                let style = `stroke:rgb(${red}, 0, ${blue}); stroke-width:1`;
+                let style = `stroke:rgb(${red}, 0, ${blue}); stroke-width:1; pointer-events:none;`;
+                
+                //
+                output.push( svg`
+                <line x1=${inNeuron.Meta.X} y1=${inNeuron.Meta.Y} x2=${inConnection.Neuron.Meta.X} y2=${inConnection.Neuron.Meta.Y} style=${style} />
+                <circle cx=${inConnection.Neuron.Meta.X} cy=${inConnection.Neuron.Meta.Y} r=${settings.radius/2} style="fill:rgb(${red}, 0, ${blue});"></circle>
+                ` );
+            };
 
-                return svg`<line x1=${inNeuron.Meta.X} y1=${inNeuron.Meta.Y} x2=${inLat.Neuron.Meta.X} y2=${inLat.Neuron.Meta.Y} style=${style} />`;
-            });
+            inNeuron.Lateral.map(drawConnection);
+            inNeuron.Receptive.map(drawConnection);
+
+            return output;
         }
     },
     "Layout",
