@@ -2,6 +2,21 @@ const Util = {
     Sigmoid(inValue:number, inBias:number = Math.E)
     {
         return 1 / (1 + Math.pow(inBias, -inValue));
+    },
+    Colorize(inSigmoid:number)
+    {
+        let sig = (inSigmoid * 2) - 1;
+        let red = 0;
+        let blue = 0;
+        if(sig >= 0)
+        {
+            red = 255 * sig;
+        }
+        else
+        {
+            blue = 255 * -sig;
+        }
+        return [red, blue];
     }
 };
 
@@ -22,6 +37,8 @@ class Neuron
     Receptive:Array<Connection>;
     Lateral:Array<Connection>;
     Output:number;
+    OutputReceptive:number;
+    OutputLateral:number;
     Meta:any;
 
     constructor()
@@ -29,38 +46,41 @@ class Neuron
         this.Receptive = [];
         this.Lateral = [];
         this.Output = 0;
+        this.OutputReceptive = 0;
+        this.OutputLateral = 0;
         this.Meta = {};
     }
-    Listen(inArray:Array<Connection>, inNeuron:Neuron, inWeight:number)
+    Wire(inArray:Array<Connection>, inNeuron:Neuron, inWeight:number)
     {
         inArray.push(new Connection(inNeuron, inWeight));
     }
-    ListenReceptive(inN:Neuron, inW:number)
+    WireReceptive(inN:Neuron, inW:number)
     {
-        this.Listen(this.Receptive, inN, inW);
+        this.Wire(this.Receptive, inN, inW);
     }
-    ListenLateral(inN:Neuron, inW:number)
+    WireLateral(inN:Neuron, inW:number)
     {
-        this.Listen(this.Lateral, inN, inW);
+        this.Wire(this.Lateral, inN, inW);
     }
-    Sample(inArray:Array<Connection>)
+    Update()
     {
-        let connection:any, total:number;
+        let connection:any;
 
-        total = 0;
-        for(connection of inArray)
+        this.Output = 0;
+
+        this.OutputReceptive = 0;
+        for(connection of this.Receptive)
         {
-            total += connection.Neuron.Output * connection.Weight;
+            this.OutputReceptive += connection.Neuron.OutputReceptive * connection.Weight;
         }
-        return total;
-    }   
-    SampleLateral()
-    {
-        return this.Sample(this.Lateral);
-    }
-    SampleReceptive()
-    {
-        return this.Sample(this.Receptive);
+        this.OutputReceptive = Util.Sigmoid(this.OutputReceptive, 1.3);
+
+        this.OutputLateral = 0;
+        for(connection of this.Lateral)
+        {
+            this.OutputLateral += connection.Neuron.OutputLateral * connection.Weight;
+        }
+        this.OutputLateral = Util.Sigmoid(this.OutputLateral, 1.3);
     }
 }
 
@@ -154,7 +174,7 @@ class Layer
             this.IterateRadial(inCX, inCY, inRadius, (inNeighbor:Neuron, inNX:number, inNY:number, inDistance:number)=>
             {
                 // connect each Neighbor to Current
-                inCurrent.ListenLateral(inNeighbor, inDistance/inRadius > 0.5 ? -1 : 1);
+                inCurrent.WireLateral(inNeighbor, inDistance/inRadius > inPercentage ? -1 : 1);
             });
         });
     }
@@ -170,7 +190,7 @@ class Layer
             inInputLayer.IterateRadial(inInputLayer.Width*percX, inInputLayer.Height*percY, inRadius, (inVisible:Neuron, inVX:number, inVY:number, inDistance:number)=>
             {
                 // connect each Visible to Current
-                inCurrent.ListenReceptive(inVisible, inDistance/inRadius > 0.5 ? -1 : 1);
+                inCurrent.WireReceptive(inVisible, inDistance/inRadius > inPercentage ? -1 : 2);
             });
         });
     }
@@ -178,8 +198,9 @@ class Layer
     {
         this.IterateAll((inCurrent:Neuron, inCX:number, inCY:number)=>
         {
-            inCurrent.Output = inCurrent.SampleReceptive();
+            inCurrent.Update();
         });
+        return;
         this.IterateAll((inCurrent:Neuron, inCX:number, inCY:number)=>
         {
             inCurrent.Output = Util.Sigmoid(inCurrent.Output + inCurrent.SampleLateral());
